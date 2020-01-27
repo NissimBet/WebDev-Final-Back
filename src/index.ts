@@ -4,6 +4,8 @@ import bodyParser from 'body-parser';
 
 import { MONGO_URI } from './config';
 
+import { findUser, registerUser, signIn, verifyUser, validateUser } from './controllers';
+
 const app = express();
 
 mongoose.connect(MONGO_URI, {
@@ -24,5 +26,13 @@ app.use((req, res, next) => {
 });
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.post('/users/getOne', findUser);
+app.post('/users/register', registerUser);
+app.get('/users/validate/', validateUser);
+
+/* DEBUGGING PURPOSES */
+app.post('/users/signIn', signIn);
+app.post('/users/verify', verifyUser);
 
 export { app };
