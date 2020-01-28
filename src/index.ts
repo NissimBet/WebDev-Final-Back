@@ -13,9 +13,12 @@ import {
   getAllLolChampions,
   getAllDotaChampions,
   getAllOWChampions,
+  populateChampions,
 } from './controllers';
 
 const app = express();
+
+populateChampions();
 
 mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,
