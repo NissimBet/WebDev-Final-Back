@@ -1,14 +1,9 @@
 import mongoose, { Schema } from 'mongoose';
-import { JWT, JWK } from 'jose';
+import jwt from 'jsonwebtoken';
 
 import { SECRET } from '../config';
 
 mongoose.Promise = global.Promise;
-
-const userJWTKey = JWK.asKey({
-  kty: 'oct',
-  k: SECRET,
-});
 
 const UserSchema = new Schema({
   username: { type: String },
@@ -48,12 +43,9 @@ export const UserFunctions = {
   },
   signInUser: async (user: SignUserIn) => {
     try {
-      const token = JWT.sign({ username: `${user.email}${user.password}` }, userJWTKey, {
-        issuer: 'gamemonitor',
-        expiresIn: '2 hours',
-        header: {
-          typ: 'JWT',
-        },
+      const data = { user: user.email };
+      const token = jwt.sign(data, SECRET, {
+        expiresIn: 60 * 60 * 3,
       });
       const userData = await User.findOne({ ...user });
       await User.updateOne({ _id: userData._id }, { token: token });
@@ -71,14 +63,19 @@ export const UserFunctions = {
       throw Error(error);
     }
   },
-  validateUserToken: async (email: string, token: string) => {
+  validateUserToken: async (token: string) => {
     try {
-      const user = await User.findOne({ email: email });
-      if (user) {
-        return JWT.verify(token, userJWTKey, {
-          issuer: 'gamemonitor',
-        });
-      }
+      let wasVerified = false;
+      jwt.verify(token, SECRET, (err, _) => {
+        if (err) {
+          wasVerified = false;
+          return;
+        }
+        wasVerified = true;
+        return;
+      });
+
+      return wasVerified;
     } catch (error) {
       throw Error(error);
     }

@@ -1,6 +1,8 @@
 import { UserFunctions } from '../models';
 import { RequestHandler } from 'express';
 
+// TODO do I validate token alongside email?
+
 export const registerUser: RequestHandler = async (req, res) => {
   try {
     const { email, password, username } = req.body;
@@ -16,22 +18,22 @@ export const registerUser: RequestHandler = async (req, res) => {
           username,
         });
 
-        res.status(200).json(newUser);
+        return res.status(201).json(newUser);
       } else {
         // username / email taken
         res.statusMessage = 'Email taken';
-        res.status(409).send();
+        return res.sendStatus(409);
       }
     } else {
       res.statusMessage = 'Missing Parameters';
-      res.status(406).send();
+      return res.sendStatus(406);
     }
   } catch (error) {
     console.log(error);
   }
 };
 
-export const signIn: RequestHandler = async (req, res) => {
+export const login: RequestHandler = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -43,17 +45,16 @@ export const signIn: RequestHandler = async (req, res) => {
           email: email,
           password: password,
         });
-        console.log(newUser);
 
-        res.status(200).json(newUser);
+        return res.status(200).json(newUser);
       } else {
         // username / email taken
         res.statusMessage = 'Email taken';
-        res.status(409).send();
+        return res.sendStatus(409);
       }
     } else {
       res.statusMessage = 'Missing Parameters';
-      res.status(406).send();
+      return res.sendStatus(406);
     }
   } catch (error) {
     console.log(error);
@@ -62,19 +63,23 @@ export const signIn: RequestHandler = async (req, res) => {
 
 export const validateUser: RequestHandler = async (req, res) => {
   try {
-    const { email, token } = req.query;
-    if (email && token) {
-      const wasValidated = await UserFunctions.validateUserToken(email, token);
+    let token = req.headers.authorization;
+
+    if (token) {
+      token = token.replace('Bearer ', '');
+
+      const wasValidated = await UserFunctions.validateUserToken(token);
+
       if (wasValidated) {
         res.statusMessage = 'User Validated';
-        return res.status(201).send(wasValidated);
+        return res.sendStatus(200);
       } else {
         res.statusMessage = 'User not validated';
-        return res.status(404).send();
+        return res.sendStatus(403);
       }
     }
     res.statusMessage = 'Missing parameters';
-    res.status(409).send();
+    return res.sendStatus(406);
   } catch (error) {
     console.log(error);
   }
@@ -85,8 +90,8 @@ export const findUser: RequestHandler = async (req, res) => {
   try {
     const { email } = req.body;
     const user = await UserFunctions.findByEmail(email);
-    console.log(user);
-    res.status(200).json(user);
+
+    return res.sendStatus(200).json(user);
   } catch (error) {
     console.log(error);
   }
@@ -98,13 +103,12 @@ export const verifyUser: RequestHandler = async (req, res) => {
     const user = await UserFunctions.findByEmail(email);
     if (user) {
       const token = await UserFunctions.signInUser({ email: email, password: password });
-      const isToken = await UserFunctions.validateUserToken(email, token);
+      const isToken = await UserFunctions.validateUserToken(token);
 
-      console.log(isToken);
-      return res.status(200).send(isToken);
+      return res.sendStatus(200).json(isToken);
     } else {
       res.statusMessage = 'user not found';
-      res.status(404).send();
+      res.sendStatus(404);
     }
   } catch (error) {
     console.log(error);
