@@ -37,7 +37,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.post('/users/register', registerUser);
-app.get('/users/no-email-validate', validateUser);
+app.get('/users/validate', validateUser);
 app.post('/users/login', login);
 
 app.get('/champs/lol/all', getAllLolChampions);
