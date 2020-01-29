@@ -1,8 +1,9 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import bodyParser from 'body-parser';
+import cors from 'cors';
 
-import { MONGO_URI } from './config';
+import { MONGO_URI, CLIENT_URI } from './config';
 
 import {
   findUser,
@@ -26,16 +27,23 @@ mongoose.connect(MONGO_URI, {
   useUnifiedTopology: true,
 });
 
+const options: cors.CorsOptions = {
+  allowedHeaders: [
+    'Origin',
+    'X-Requested-With',
+    'Content-Type',
+    'Accept',
+    'X-Access-Token',
+    'Authorization',
+  ],
+  credentials: true,
+  methods: 'GET,HEAD,OPTIONS,PUT,PATCH,POST,DELETE',
+  origin: CLIENT_URI,
+  preflightContinue: false,
+};
+
 app.set('port', process.env.PORT);
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE');
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(204);
-  }
-  next();
-});
+app.use(cors(options));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -50,5 +58,7 @@ app.get('/champs/ow/all', getAllOWChampions);
 /* DEBUGGING PURPOSES */
 app.post('/users/getOne', findUser);
 app.post('/users/verify', verifyUser);
+
+app.options('*', cors(options));
 
 export { app };
