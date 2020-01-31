@@ -6,15 +6,17 @@ import cors from 'cors';
 import { MONGO_URI, CLIENT_URI } from './config';
 
 import {
-  findUser,
   registerUser,
   login,
-  verifyUser,
   validateUser,
   getAllLolChampions,
   getAllDotaChampions,
   getAllOWChampions,
   populateChampions,
+  getUserData,
+  addFavoriteChampion,
+  removeFavoriteChampion,
+  getAllChamps,
 } from './controllers';
 
 const app = express();
@@ -50,14 +52,15 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.post('/users/register', registerUser);
 app.get('/users/validate', validateUser);
 app.post('/users/login', login);
+app.get('/user/get-data', getUserData);
 
 app.get('/champs/lol/all', getAllLolChampions);
 app.get('/champs/dota/all', getAllDotaChampions);
 app.get('/champs/ow/all', getAllOWChampions);
+app.get('/champs/all', getAllChamps);
 
-/* DEBUGGING PURPOSES */
-app.post('/users/getOne', findUser);
-app.post('/users/verify', verifyUser);
+app.post('/user/new-favorite-champ', addFavoriteChampion);
+app.post('/user/remove-favorite-champ', removeFavoriteChampion);
 
 app.options('*', cors(options));
 

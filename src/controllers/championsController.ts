@@ -110,3 +110,22 @@ export const getAllDotaChampions: RequestHandler = async (req, res) => {
 export const getAllOWChampions: RequestHandler = async (req, res) => {
   return res.status(200).json(OWChampions);
 };
+
+export const getAllChamps: RequestHandler = async (req, res) => {
+  return res.status(200).json({
+    league: LolChampions,
+    dota: DotaChampions,
+    overwatch: OWChampions,
+  });
+};
+
+export const getChampionById = (game: string, championId: number | string) => {
+  switch (game) {
+    case 'league':
+      return LolChampions.find(({ id }) => id === championId);
+    case 'overwatch':
+      return OWChampions.find(({ id }) => id === championId);
+    case 'dota':
+      return DotaChampions.find(({ id }) => id === championId);
+  }
+};

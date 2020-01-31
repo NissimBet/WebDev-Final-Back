@@ -1,14 +1,17 @@
+import { getChampionById } from '.';
 import { UserFunctions } from '../models';
 import { RequestHandler } from 'express';
 
-// TODO do I validate token alongside email?
+function getToken(token: string) {
+  return token.replace('Bearer ', '');
+}
 
 export const registerUser: RequestHandler = async (req, res) => {
   try {
     const { email, password, username } = req.body;
 
     if (email && password && username) {
-      const userWithEmail = await UserFunctions.findByEmail(email);
+      const userWithEmail = await UserFunctions.isEmailInUse(email);
 
       if (!userWithEmail) {
         // hash password
@@ -38,7 +41,7 @@ export const login: RequestHandler = async (req, res) => {
     const { email, password } = req.body;
 
     if (email && password) {
-      const userWithEmail = await UserFunctions.findByEmail(email);
+      const userWithEmail = await UserFunctions.isEmailInUse(email);
       if (userWithEmail) {
         // hash password
         const newUser = await UserFunctions.signInUser({
@@ -75,7 +78,7 @@ export const validateUser: RequestHandler = async (req, res) => {
         return res.sendStatus(200);
       } else {
         res.statusMessage = 'User not validated';
-        return res.sendStatus(403);
+        return res.sendStatus(401);
       }
     }
     res.statusMessage = 'Missing parameters';
@@ -85,30 +88,73 @@ export const validateUser: RequestHandler = async (req, res) => {
   }
 };
 
-/* FOR DEBUGGING PURPOSES */
-export const findUser: RequestHandler = async (req, res) => {
+export const getUserData: RequestHandler = async (req, res) => {
   try {
-    const { email } = req.body;
-    const user = await UserFunctions.findByEmail(email);
+    let token = getToken(req.headers.authorization);
+    if (token) {
+      token = getToken(token);
 
-    return res.sendStatus(200).json(user);
+      const userData = await UserFunctions.getTokenUserData(token);
+      if (userData) {
+        const { email, username, favoriteChamps } = userData;
+        res.status(200).json({ email, username, favoriteChamps });
+      } else {
+        res.statusMessage = 'Could not verify token';
+        res.sendStatus(401);
+      }
+    }
   } catch (error) {
     console.log(error);
   }
 };
-/* USED IN DEBUGGING */
-export const verifyUser: RequestHandler = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await UserFunctions.findByEmail(email);
-    if (user) {
-      const token = await UserFunctions.signInUser({ email: email, password: password });
-      const isToken = await UserFunctions.validateUserToken(token);
 
-      return res.sendStatus(200).json(isToken);
+export const addFavoriteChampion: RequestHandler = async (req, res) => {
+  try {
+    const { game, champId } = req.body;
+    let token = req.headers.authorization;
+    token = getToken(token);
+    if (game && champId) {
+      const isValid = await UserFunctions.validateUserToken(token);
+      if (isValid) {
+        const { id, name } = getChampionById(game, champId);
+        const wasUpdateDone = await UserFunctions.addFavoriteChamp(token, game, {
+          name,
+          id: id as string,
+        });
+        if (wasUpdateDone) {
+          return res.sendStatus(200);
+        } else {
+          return res.sendStatus(404);
+        }
+      }
+      return res.sendStatus(401);
+    }
+    return res.sendStatus(406);
+  } catch (error) {
+    console.log(error);
+    return res.sendStatus(504);
+  }
+};
+
+export const removeFavoriteChampion: RequestHandler = async (req, res) => {
+  try {
+    const { game, champId } = req.body;
+    console.log(game, champId);
+    let token = req.headers.authorization;
+    if (game && champId) {
+      token = getToken(token);
+      const isValid = await UserFunctions.validateUserToken(token);
+      if (isValid) {
+        const wasUpdateDone = await UserFunctions.removeFavoriteChamp(token, game, champId);
+        if (wasUpdateDone) {
+          return res.sendStatus(200);
+        } else {
+          return res.sendStatus(404);
+        }
+      }
+      return res.sendStatus(401);
     } else {
-      res.statusMessage = 'user not found';
-      res.sendStatus(404);
+      return res.sendStatus(406);
     }
   } catch (error) {
     console.log(error);
