@@ -20,11 +20,11 @@ export const registerUser: RequestHandler = async (req, res) => {
           password: password,
           username,
         });
-
+        res.statusMessage = 'User created';
         return res.status(201).json(newUser);
       } else {
         // username / email taken
-        res.statusMessage = 'Email taken';
+        res.statusMessage = 'Email Taken';
         return res.sendStatus(409);
       }
     } else {
@@ -48,8 +48,14 @@ export const login: RequestHandler = async (req, res) => {
           email: email,
           password: password,
         });
-
-        return res.status(200).json(newUser);
+        console.log(email, password);
+        if (newUser) {
+          res.statusMessage = 'Sign in successful';
+          return res.status(200).json(newUser);
+        } else {
+          res.statusMessage = 'User not found';
+          return res.sendStatus(404);
+        }
       } else {
         // username / email taken
         res.statusMessage = 'Email taken';
@@ -78,7 +84,7 @@ export const validateUser: RequestHandler = async (req, res) => {
         return res.sendStatus(200);
       } else {
         res.statusMessage = 'User not validated';
-        return res.sendStatus(401);
+        return res.sendStatus(403);
       }
     }
     res.statusMessage = 'Missing parameters';
@@ -90,18 +96,23 @@ export const validateUser: RequestHandler = async (req, res) => {
 
 export const getUserData: RequestHandler = async (req, res) => {
   try {
-    let token = getToken(req.headers.authorization);
+    let token = req.headers.authorization;
     if (token) {
       token = getToken(token);
 
       const userData = await UserFunctions.getTokenUserData(token);
       if (userData) {
         const { email, username, favoriteChamps } = userData;
+        console.log(userData);
+        res.statusMessage = 'fetch successful';
         res.status(200).json({ email, username, favoriteChamps });
       } else {
         res.statusMessage = 'Could not verify token';
-        res.sendStatus(401);
+        res.sendStatus(403);
       }
+    } else {
+      res.statusMessage = 'Missing token';
+      res.sendStatus(406);
     }
   } catch (error) {
     console.log(error);
@@ -116,19 +127,18 @@ export const addFavoriteChampion: RequestHandler = async (req, res) => {
     if (game && champId) {
       const isValid = await UserFunctions.validateUserToken(token);
       if (isValid) {
-        const { id, name } = getChampionById(game, champId);
-        const wasUpdateDone = await UserFunctions.addFavoriteChamp(token, game, {
-          name,
-          id: id as string,
-        });
-        if (wasUpdateDone) {
+        const champion = await getChampionById(game, champId);
+        if (champion) {
+          await UserFunctions.addFavoriteChamp(token, game, champion._id);
           return res.sendStatus(200);
-        } else {
-          return res.sendStatus(404);
         }
+        res.statusMessage = 'Champion not found';
+        return res.sendStatus(404);
       }
-      return res.sendStatus(401);
+      res.statusMessage = 'User unauthorized';
+      return res.sendStatus(403);
     }
+    res.statusMessage = 'Missing parameters';
     return res.sendStatus(406);
   } catch (error) {
     console.log(error);
@@ -145,15 +155,18 @@ export const removeFavoriteChampion: RequestHandler = async (req, res) => {
       token = getToken(token);
       const isValid = await UserFunctions.validateUserToken(token);
       if (isValid) {
-        const wasUpdateDone = await UserFunctions.removeFavoriteChamp(token, game, champId);
-        if (wasUpdateDone) {
+        const champion = await getChampionById(game, champId);
+        if (champion) {
+          await UserFunctions.removeFavoriteChamp(token, game, champion._id);
           return res.sendStatus(200);
-        } else {
-          return res.sendStatus(404);
         }
+        res.statusMessage = 'Champion not found';
+        return res.sendStatus(404);
       }
-      return res.sendStatus(401);
+      res.statusMessage = 'User not authorized';
+      return res.sendStatus(403);
     } else {
+      res.statusMessage = 'Missing parameters';
       return res.sendStatus(406);
     }
   } catch (error) {

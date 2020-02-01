@@ -17,6 +17,16 @@ import {
   addFavoriteChampion,
   removeFavoriteChampion,
   getAllChamps,
+  getAllLeagueItems,
+  getLeagueItem,
+  getLastItemBuild,
+  getAllDotaItems,
+  getDotaItem,
+  getAllLeagueUserBuilds,
+  getAllPublicUserBuilds,
+  getAllLeagueBuilds,
+  getLeagueBuilds,
+  createLeagueBuild,
 } from './controllers';
 
 const app = express();
@@ -49,18 +59,37 @@ app.use(cors(options));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// user stuff
 app.post('/users/register', registerUser);
 app.get('/users/validate', validateUser);
 app.post('/users/login', login);
 app.get('/user/get-data', getUserData);
 
+// champs stuff
 app.get('/champs/lol/all', getAllLolChampions);
 app.get('/champs/dota/all', getAllDotaChampions);
 app.get('/champs/ow/all', getAllOWChampions);
 app.get('/champs/all', getAllChamps);
 
+// favorite champions stuff
 app.post('/user/new-favorite-champ', addFavoriteChampion);
 app.post('/user/remove-favorite-champ', removeFavoriteChampion);
+
+// league items stuff
+app.get('/league/items', getAllLeagueItems);
+app.get('/league/items/id/:id', getLeagueItem);
+app.get('/league/items/last', getLastItemBuild);
+
+// dota items stuff
+app.get('/dota/items', getAllDotaItems);
+app.get('/dota/items/id/:id', getDotaItem);
+
+// league builds
+app.get('/league/builds/all', getAllLeagueBuilds);
+app.get('/league/builds', getLeagueBuilds);
+app.get('/league/builds/user/:id', getAllLeagueUserBuilds);
+app.get('/league/builds/public/user/:id', getAllPublicUserBuilds);
+app.post('/league/builds/new', createLeagueBuild);
 
 app.options('*', cors(options));
 

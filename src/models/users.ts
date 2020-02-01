@@ -2,27 +2,24 @@ import mongoose, { Schema } from 'mongoose';
 import jwt from 'jsonwebtoken';
 
 import { SECRET } from '../config';
+import { SHA256 } from 'crypto-js';
 
 mongoose.Promise = global.Promise;
-
-const ChampionSchema = new Schema({
-  id: { type: String, set: (num: string | number) => num as string },
-  name: String,
-});
-
-interface ChampionData {
-  id: string;
-  name: string;
-}
 
 const UserSchema = new Schema({
   username: { type: String },
   email: { type: String },
   password: { type: String },
   favoriteChamps: {
-    league: { type: [ChampionSchema] },
-    dota: { type: [ChampionSchema] },
-    overwatch: { type: [ChampionSchema] },
+    league: {
+      type: [{ type: mongoose.Types.ObjectId, ref: 'league-champions' }],
+    },
+    dota: {
+      type: [{ type: mongoose.Types.ObjectId, ref: 'dota-champions' }],
+    },
+    overwatch: {
+      type: [{ type: mongoose.Types.ObjectId, ref: 'overwatch-champions' }],
+    },
   },
 });
 
@@ -31,9 +28,9 @@ interface UserInterface extends mongoose.Document {
   email: string;
   password: string;
   favoriteChamps: {
-    league: Array<ChampionData>;
-    dota: Array<ChampionData>;
-    overwatch: Array<ChampionData>;
+    league: Array<string>;
+    dota: Array<string>;
+    overwatch: Array<string>;
   };
 }
 
@@ -52,8 +49,14 @@ interface SignUserIn {
 
 export const UserFunctions = {
   createUser: async (user: CreateUserInterface) => {
+    const { password } = user;
+    const encryptedPass = SHA256(password, SECRET);
     try {
-      const status = await User.create({ ...user });
+      const status = await User.create({
+        email: user.email,
+        username: user.username,
+        password: encryptedPass,
+      });
       return status;
     } catch (error) {
       throw Error(error);
@@ -61,13 +64,21 @@ export const UserFunctions = {
   },
   signInUser: async (user: SignUserIn) => {
     try {
-      const data = { user: user.email };
-      const token = jwt.sign(data, SECRET, {
-        expiresIn: 60 * 60 * 3,
+      const encryptedPass = SHA256(user.password, SECRET);
+      // console.log(user.password, encryptedPass.toString());
+      const isUser = await User.findOne({
+        email: user.email,
+        password: encryptedPass.toString(),
       });
-      /* const userData = await User.findOne({ ...user });
-      await User.updateOne({ _id: userData._id }, { token: token }); */
-      return token;
+      if (isUser) {
+        const data = { user: user.email };
+        const token = jwt.sign(data, SECRET, {
+          expiresIn: 60 * 60 * 3,
+        });
+        return token;
+      } else {
+        return null;
+      }
     } catch (error) {
       throw Error(error);
     }
@@ -114,7 +125,10 @@ export const UserFunctions = {
 
       const { user } = tokenData;
 
-      const userData = await User.findOne({ email: user });
+      const userData = await User.findOne({ email: user })
+        .populate('favoriteChamps.league')
+        .populate('favoriteChamps.dota')
+        .populate('favoriteChamps.overwatch');
 
       return userData;
     } catch (error) {
@@ -124,7 +138,7 @@ export const UserFunctions = {
   addFavoriteChamp: async (
     token: string,
     game: 'league' | 'overwatch' | 'dota',
-    championData: ChampionData
+    championId: string
   ) => {
     try {
       let tokenData;
@@ -145,10 +159,10 @@ export const UserFunctions = {
       const userToUpdate = await User.findOne({ email: user });
       if (userToUpdate) {
         const oldFavs = userToUpdate.favoriteChamps;
-        if (oldFavs[game].findIndex(({ id }) => id === championData.id) >= 0) {
+        if (oldFavs[game].findIndex(id => id === championId) >= 0) {
           return false;
         } else {
-          oldFavs[game].push(championData);
+          oldFavs[game].push(championId);
 
           await User.updateOne({ email: user }, { favoriteChamps: oldFavs });
           return true;
@@ -182,7 +196,7 @@ export const UserFunctions = {
       const userToUpdate = await User.findOne({ email: user });
       if (userToUpdate) {
         const oldFavs = userToUpdate.favoriteChamps;
-        const indexOfChamp = oldFavs[game].findIndex(({ id }) => id == championId);
+        const indexOfChamp = oldFavs[game].findIndex(id => id == championId);
         if (indexOfChamp < 0) {
           return false;
         } else {

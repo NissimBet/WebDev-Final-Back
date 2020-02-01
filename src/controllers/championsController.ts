@@ -1,9 +1,13 @@
 import { RequestHandler } from 'express';
+import { championfunctions } from '../models';
 import fetch from 'node-fetch';
 
 /*
 https://developer.riotgames.com/docs/lol
+///// CHAMPIONS /////
 https://ddragon.leagueoflegends.com/cdn/10.2.1/data/en_US/champion.json
+///// ITEMS /////
+https://ddragon.leagueoflegends.com/cdn/10.2.1/data/en_US/item.json
 
 https://docs.opendota.com/
 http://sharonkuo.me/dota2/heroes.html
@@ -38,9 +42,9 @@ const DotaChampions: Array<DotaChampion> = [];
 const OWChampions: Array<OWChampion> = [];
 
 export const populateChampions = async () => {
-  await populateDotaChampions();
+  /* await populateDotaChampions();
   await populateLolChampions();
-  await populateOWChampions();
+  await populateOWChampions(); */
 };
 const populateLolChampions = async () => {
   try {
@@ -100,32 +104,62 @@ const populateOWChampions = async () => {
 };
 
 export const getAllLolChampions: RequestHandler = async (req, res) => {
-  return res.status(200).json(LolChampions);
+  try {
+    const leagueChampions = await championfunctions.getLeagueChampions();
+    return res.status(200).json(leagueChampions);
+  } catch (error) {
+    console.log(error);
+    return res.sendStatus(500);
+  }
 };
 
 export const getAllDotaChampions: RequestHandler = async (req, res) => {
-  return res.status(200).json(DotaChampions);
+  try {
+    const dotaChampions = await championfunctions.getDotaChampions();
+    return res.status(200).json(dotaChampions);
+  } catch (error) {
+    console.log(error);
+    return res.sendStatus(500);
+  }
 };
 
 export const getAllOWChampions: RequestHandler = async (req, res) => {
-  return res.status(200).json(OWChampions);
+  try {
+    const overwatchChampions = await championfunctions.getOverwatchChampions();
+    return res.status(200).json(overwatchChampions);
+  } catch (error) {
+    console.log(error);
+    return res.sendStatus(500);
+  }
 };
 
 export const getAllChamps: RequestHandler = async (req, res) => {
-  return res.status(200).json({
-    league: LolChampions,
-    dota: DotaChampions,
-    overwatch: OWChampions,
-  });
+  try {
+    const allChamps = await championfunctions.getAllChampions();
+    return res.status(200).json(allChamps);
+  } catch (error) {
+    console.log(error);
+    return res.sendStatus(500);
+  }
 };
 
-export const getChampionById = (game: string, championId: number | string) => {
-  switch (game) {
-    case 'league':
-      return LolChampions.find(({ id }) => id === championId);
-    case 'overwatch':
-      return OWChampions.find(({ id }) => id === championId);
-    case 'dota':
-      return DotaChampions.find(({ id }) => id === championId);
+export const getChampionById = async (game: string, championId: number | string) => {
+  try {
+    let champion;
+    switch (game) {
+      case 'league':
+        champion = championfunctions.getLeagueChampionById(championId as string);
+        break;
+      case 'overwatch':
+        champion = championfunctions.getOverwatchChampionById(championId as string);
+        break;
+      case 'dota':
+        champion = championfunctions.getDotaChampionById(championId as number);
+        break;
+    }
+    return champion;
+  } catch (error) {
+    console.log(error);
+    return null;
   }
 };
