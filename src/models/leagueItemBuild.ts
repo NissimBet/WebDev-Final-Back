@@ -8,6 +8,7 @@ const LeagueItemBuildSchema = new Schema({
     type: [{ type: mongoose.Types.ObjectId, ref: 'league-items' }],
     maxlength: 6,
   },
+  champion: { type: mongoose.Types.ObjectId, ref: 'league-champions' },
   private: { type: Boolean },
   createdAt: { type: Date, default: Date.now },
 });
@@ -27,8 +28,9 @@ const LeagueItemBuild = mongoose.model<LeagueItemBuildInterface>(
 export const LeagueBuildFunctions = {
   getAllBuilds: async () => {
     try {
-      const allBuilds = await LeagueItemBuild.find()
+      const allBuilds = await LeagueItemBuild.find({ private: false })
         .populate('items')
+        .populate('champion')
         .populate('creator');
       return allBuilds;
     } catch (error) {
@@ -40,6 +42,7 @@ export const LeagueBuildFunctions = {
       const allBuilds = await LeagueItemBuild.find()
         .limit(limit)
         .populate('items')
+        .populate('champion')
         .populate('creator');
       return allBuilds;
     } catch (error) {
@@ -50,6 +53,7 @@ export const LeagueBuildFunctions = {
     try {
       const userBuilds = await LeagueItemBuild.find({ creator: userId })
         .populate('items')
+        .populate('champion')
         .populate('creator');
 
       return userBuilds;
@@ -61,6 +65,7 @@ export const LeagueBuildFunctions = {
     try {
       const publicBuilds = await LeagueItemBuild.find({ creator: userId, private: false })
         .populate('items')
+        .populate('champion')
         .populate('creator');
       return publicBuilds;
     } catch (error) {
@@ -68,14 +73,25 @@ export const LeagueBuildFunctions = {
     }
   },
   // assume user exists and is authorized
-  createBuild: async (userId: string, items: Array<string>, isPrivate: boolean) => {
+  createBuild: async (
+    userId: string,
+    items: Array<string>,
+    isPrivate: boolean,
+    championId: string
+  ) => {
     try {
       const newBuildStatus = await LeagueItemBuild.create({
         creator: userId,
         items: items.slice(0, 6),
         private: isPrivate,
+        champion: championId,
       });
-      return newBuildStatus;
+      const populated = await newBuildStatus
+        .populate('items')
+        .populate('champion')
+        .populate('creator')
+        .execPopulate();
+      return populated;
     } catch (error) {
       throw Error(error);
     }
@@ -103,7 +119,8 @@ export const LeagueBuildFunctions = {
         const newItems = prevBuild.items.filter(
           item => itemsToRemove.findIndex(val => val === item) >= 0
         );
-        const update = prevBuild.update({ items: newItems.slice(0, 6) });
+        const update = await prevBuild.updateOne({ items: newItems.slice(0, 6) });
+        await prevBuild.save();
         return update;
       }
       return null;
@@ -111,17 +128,25 @@ export const LeagueBuildFunctions = {
       throw Error(error);
     }
   },
-  toggleBuildPrivacy: async (buildId: string) => {
+  setBuildPrivacy: async (buildId: string, newPrivacy: boolean) => {
     try {
       const build = await LeagueItemBuild.findById(buildId);
       if (build) {
-        const privateStatus = build.private;
-        build.update({
-          private: !privateStatus,
+        await build.updateOne({
+          private: newPrivacy,
         });
-        return privateStatus;
+        await build.save();
+        return true;
       }
-      return null;
+      return false;
+    } catch (error) {
+      throw Error(error);
+    }
+  },
+  deleteBuild: async (buildId: string) => {
+    try {
+      const deleteStatus = await LeagueItemBuild.deleteOne({ _id: buildId });
+      return deleteStatus;
     } catch (error) {
       throw Error(error);
     }

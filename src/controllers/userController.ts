@@ -48,7 +48,7 @@ export const login: RequestHandler = async (req, res) => {
           email: email,
           password: password,
         });
-        console.log(email, password);
+        //console.log(email, password, newUser);
         if (newUser) {
           res.statusMessage = 'Sign in successful';
           return res.status(200).json(newUser);
@@ -57,8 +57,7 @@ export const login: RequestHandler = async (req, res) => {
           return res.sendStatus(404);
         }
       } else {
-        // username / email taken
-        res.statusMessage = 'Email taken';
+        res.statusMessage = 'Email seems to not be registered';
         return res.sendStatus(409);
       }
     } else {
@@ -103,7 +102,6 @@ export const getUserData: RequestHandler = async (req, res) => {
       const userData = await UserFunctions.getTokenUserData(token);
       if (userData) {
         const { email, username, favoriteChamps } = userData;
-        console.log(userData);
         res.statusMessage = 'fetch successful';
         res.status(200).json({ email, username, favoriteChamps });
       } else {
@@ -149,7 +147,7 @@ export const addFavoriteChampion: RequestHandler = async (req, res) => {
 export const removeFavoriteChampion: RequestHandler = async (req, res) => {
   try {
     const { game, champId } = req.body;
-    console.log(game, champId);
+
     let token = req.headers.authorization;
     if (game && champId) {
       token = getToken(token);

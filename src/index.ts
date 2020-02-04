@@ -27,6 +27,8 @@ import {
   getAllLeagueBuilds,
   getLeagueBuilds,
   createLeagueBuild,
+  setBuildPrivacy,
+  deleteLeagueBuild,
 } from './controllers';
 
 const app = express();
@@ -87,9 +89,11 @@ app.get('/dota/items/id/:id', getDotaItem);
 // league builds
 app.get('/league/builds/all', getAllLeagueBuilds);
 app.get('/league/builds', getLeagueBuilds);
-app.get('/league/builds/user/:id', getAllLeagueUserBuilds);
+app.get('/league/builds/user', getAllLeagueUserBuilds);
 app.get('/league/builds/public/user/:id', getAllPublicUserBuilds);
 app.post('/league/builds/new', createLeagueBuild);
+app.delete('/league/builds/delete/:buildId', deleteLeagueBuild);
+app.put('/league/build/privacy', setBuildPrivacy);
 
 app.options('*', cors(options));
 
