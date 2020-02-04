@@ -86,7 +86,7 @@ export const createLeagueBuild: RequestHandler = async (req, res) => {
             userData._id,
             items,
             isPrivate,
-            championId
+            championId._id
           );
           return res.status(200).json(newBuild);
         }
