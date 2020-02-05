@@ -1,4 +1,4 @@
-import { getChampionById } from '.';
+import { ChampionController } from '.';
 import { UserFunctions } from '../models';
 import { RequestHandler } from 'express';
 
@@ -125,7 +125,7 @@ export const addFavoriteChampion: RequestHandler = async (req, res) => {
     if (game && champId) {
       const isValid = await UserFunctions.validateUserToken(token);
       if (isValid) {
-        const champion = await getChampionById(game, champId);
+        const champion = await ChampionController.getChampionById(game, champId);
         if (champion) {
           await UserFunctions.addFavoriteChamp(token, game, champion._id);
           return res.sendStatus(200);
@@ -153,10 +153,12 @@ export const removeFavoriteChampion: RequestHandler = async (req, res) => {
       token = getToken(token);
       const isValid = await UserFunctions.validateUserToken(token);
       if (isValid) {
-        const champion = await getChampionById(game, champId);
+        const champion = await ChampionController.getChampionById(game, champId);
         if (champion) {
-          await UserFunctions.removeFavoriteChamp(token, game, champion._id);
-          return res.sendStatus(200);
+          const eraseStatus = await UserFunctions.removeFavoriteChamp(token, game, champion._id);
+          if (eraseStatus) {
+            return res.sendStatus(200);
+          }
         }
         res.statusMessage = 'Champion not found';
         return res.sendStatus(404);

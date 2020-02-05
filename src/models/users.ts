@@ -175,7 +175,7 @@ export const UserFunctions = {
   removeFavoriteChamp: async (
     token: string,
     game: 'league' | 'overwatch' | 'dota',
-    championId: string | number
+    championId: string
   ) => {
     try {
       let tokenData;
@@ -195,8 +195,8 @@ export const UserFunctions = {
 
       const userToUpdate = await User.findOne({ email: user });
       if (userToUpdate) {
-        const oldFavs = userToUpdate.favoriteChamps;
-        const indexOfChamp = oldFavs[game].findIndex(id => id == championId);
+        const oldFavs = { ...userToUpdate.favoriteChamps };
+        const indexOfChamp = oldFavs[game].findIndex(id => id.toString() === championId.toString());
         if (indexOfChamp < 0) {
           return false;
         } else {

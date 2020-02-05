@@ -1,9 +1,9 @@
-import { LeagueBuildFunctions, UserFunctions, championfunctions } from '../models';
 import { RequestHandler } from 'express';
+import { DotaBuildFunctions, UserFunctions, championfunctions } from '../models';
 
-export const getAllLeagueBuilds: RequestHandler = async (req, res) => {
+export const getAllDotaBuilds: RequestHandler = async (req, res) => {
   try {
-    const allBuilds = await LeagueBuildFunctions.getAllBuilds();
+    const allBuilds = await DotaBuildFunctions.getAllBuilds();
     if (allBuilds) {
       return res.status(200).json(allBuilds);
     }
@@ -15,10 +15,10 @@ export const getAllLeagueBuilds: RequestHandler = async (req, res) => {
   }
 };
 
-export const getLeagueBuilds: RequestHandler = async (req, res) => {
+export const getDotaBuilds: RequestHandler = async (req, res) => {
   try {
     const { limit } = req.query;
-    const builds = await LeagueBuildFunctions.getBuilds(+limit);
+    const builds = await DotaBuildFunctions.getBuilds(+limit);
     res.status(200).json(builds);
   } catch (error) {
     console.log(error);
@@ -26,7 +26,7 @@ export const getLeagueBuilds: RequestHandler = async (req, res) => {
   }
 };
 
-export const getAllLeagueUserBuilds: RequestHandler = async (req, res) => {
+export const getAllDotaUserBuilds: RequestHandler = async (req, res) => {
   try {
     let token = req.headers.authorization;
     if (token) {
@@ -34,8 +34,8 @@ export const getAllLeagueUserBuilds: RequestHandler = async (req, res) => {
       if (token && (await UserFunctions.validateUserToken(token))) {
         const { _id } = await UserFunctions.getTokenUserData(token);
         if (_id) {
-          const userLeagueBuilds = await LeagueBuildFunctions.getAllUserBuilds(_id);
-          return res.status(200).json(userLeagueBuilds);
+          const userDotaBuilds = await DotaBuildFunctions.getAllUserBuilds(_id);
+          return res.status(200).json(userDotaBuilds);
         }
         res.statusMessage = 'Could not retreive user data';
         return res.sendStatus(404);
@@ -51,14 +51,14 @@ export const getAllLeagueUserBuilds: RequestHandler = async (req, res) => {
   }
 };
 
-export const getAllPublicUserBuilds: RequestHandler = async (req, res) => {
+export const getAllDotaPublicUserBuilds: RequestHandler = async (req, res) => {
   try {
     const { id } = req.params;
 
     if (id) {
-      const userLeagueBuilds = await LeagueBuildFunctions.getAllUserBuilds(id);
-      if (userLeagueBuilds) {
-        return res.status(200).json(userLeagueBuilds);
+      const userDotaBuilds = await DotaBuildFunctions.getAllUserBuilds(id);
+      if (userDotaBuilds) {
+        return res.status(200).json(userDotaBuilds);
       }
       res.statusMessage = 'User has no builds';
       return res.sendStatus(404);
@@ -71,18 +71,18 @@ export const getAllPublicUserBuilds: RequestHandler = async (req, res) => {
   }
 };
 
-export const createLeagueBuild: RequestHandler = async (req, res) => {
+export const createDotaBuild: RequestHandler = async (req, res) => {
   try {
     const { items, private: isPrivate, champion } = req.body;
 
     let token = req.headers.authorization;
-    if (items && champion && typeof isPrivate === 'boolean') {
-      const championId = await championfunctions.getLeagueChampionById(champion);
+    if (items && champion && (champion as number) && typeof isPrivate === 'boolean') {
+      const championId = await championfunctions.getDotaChampionById(champion);
       if (championId) {
         token = token.replace('Bearer ', '');
         if (token && (await UserFunctions.validateUserToken(token))) {
           const userData = await UserFunctions.getTokenUserData(token);
-          const newBuild = await LeagueBuildFunctions.createBuild(
+          const newBuild = await DotaBuildFunctions.createBuild(
             userData._id,
             items,
             isPrivate,
@@ -104,14 +104,14 @@ export const createLeagueBuild: RequestHandler = async (req, res) => {
   }
 };
 
-export const setBuildPrivacy: RequestHandler = async (req, res) => {
+export const setDotaBuildPrivacy: RequestHandler = async (req, res) => {
   try {
     const { private: isPrivate, buildId } = req.body;
     let token = req.headers.authorization;
     if (buildId && typeof isPrivate === 'boolean') {
       token = token.replace('Bearer ', '');
       if (token && (await UserFunctions.validateUserToken(token))) {
-        const success = await LeagueBuildFunctions.setBuildPrivacy(buildId, isPrivate);
+        const success = await DotaBuildFunctions.setBuildPrivacy(buildId, isPrivate);
         if (success) {
           return res.sendStatus(200);
         } else {
@@ -130,7 +130,7 @@ export const setBuildPrivacy: RequestHandler = async (req, res) => {
   }
 };
 
-export const deleteLeagueBuild: RequestHandler = async (req, res) => {
+export const deleteDotaBuild: RequestHandler = async (req, res) => {
   try {
     const { buildId } = req.params;
     console.log(buildId);
@@ -138,7 +138,7 @@ export const deleteLeagueBuild: RequestHandler = async (req, res) => {
     if (buildId) {
       token = token.replace('Bearer ', '');
       if (token && (await UserFunctions.validateUserToken(token))) {
-        const success = await LeagueBuildFunctions.deleteBuild(buildId);
+        const success = await DotaBuildFunctions.deleteBuild(buildId);
         if (success) {
           return res.sendStatus(204);
         } else {

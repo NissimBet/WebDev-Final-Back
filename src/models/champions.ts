@@ -50,9 +50,9 @@ export const championfunctions = {
   getAllChampions: async () => {
     try {
       const champions = {
-        league: await LeagueChampion.find(),
-        dota: await DotaChampion.find(),
-        overwatch: await OverwatchChampion.find(),
+        league: await LeagueChampion.find().sort('name'),
+        dota: await DotaChampion.find().sort('name'),
+        overwatch: await OverwatchChampion.find().sort('name'),
       };
       return champions;
     } catch (error) {

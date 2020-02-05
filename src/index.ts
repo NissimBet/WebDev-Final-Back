@@ -6,34 +6,17 @@ import cors from 'cors';
 import { MONGO_URI, CLIENT_URI } from './config';
 
 import {
-  registerUser,
-  login,
-  validateUser,
-  getAllLolChampions,
-  getAllDotaChampions,
-  getAllOWChampions,
-  populateChampions,
-  getUserData,
-  addFavoriteChampion,
-  removeFavoriteChampion,
-  getAllChamps,
-  getAllLeagueItems,
-  getLeagueItem,
-  getLastItemBuild,
-  getAllDotaItems,
-  getDotaItem,
-  getAllLeagueUserBuilds,
-  getAllPublicUserBuilds,
-  getAllLeagueBuilds,
-  getLeagueBuilds,
-  createLeagueBuild,
-  setBuildPrivacy,
-  deleteLeagueBuild,
+  ChampionController,
+  DotaBuildController,
+  DotaController,
+  LeagueBuildController,
+  LeagueController,
+  UserController,
 } from './controllers';
 
 const app = express();
 
-populateChampions();
+ChampionController.populateChampions();
 
 mongoose.connect(MONGO_URI, {
   useNewUrlParser: true,
@@ -62,38 +45,47 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // user stuff
-app.post('/users/register', registerUser);
-app.get('/users/validate', validateUser);
-app.post('/users/login', login);
-app.get('/user/get-data', getUserData);
+app.post('/users/register', UserController.registerUser);
+app.get('/users/validate', UserController.validateUser);
+app.post('/users/login', UserController.login);
+app.get('/user/get-data', UserController.getUserData);
 
 // champs stuff
-app.get('/champs/lol/all', getAllLolChampions);
-app.get('/champs/dota/all', getAllDotaChampions);
-app.get('/champs/ow/all', getAllOWChampions);
-app.get('/champs/all', getAllChamps);
+app.get('/champs/lol/all', ChampionController.getAllLolChampions);
+app.get('/champs/dota/all', ChampionController.getAllDotaChampions);
+app.get('/champs/ow/all', ChampionController.getAllOWChampions);
+app.get('/champs/all', ChampionController.getAllChamps);
 
 // favorite champions stuff
-app.post('/user/new-favorite-champ', addFavoriteChampion);
-app.post('/user/remove-favorite-champ', removeFavoriteChampion);
+app.post('/user/new-favorite-champ', UserController.addFavoriteChampion);
+app.post('/user/remove-favorite-champ', UserController.removeFavoriteChampion);
 
 // league items stuff
-app.get('/league/items', getAllLeagueItems);
-app.get('/league/items/id/:id', getLeagueItem);
-app.get('/league/items/last', getLastItemBuild);
+app.get('/league/items', LeagueController.getAllLeagueItems);
+app.get('/league/items/id/:id', LeagueController.getLeagueItem);
+app.get('/league/items/last', LeagueController.getLastItemBuild);
 
 // dota items stuff
-app.get('/dota/items', getAllDotaItems);
-app.get('/dota/items/id/:id', getDotaItem);
+app.get('/dota/items', DotaController.getAllDotaItems);
+app.get('/dota/items/id/:id', DotaController.getDotaItem);
 
 // league builds
-app.get('/league/builds/all', getAllLeagueBuilds);
-app.get('/league/builds', getLeagueBuilds);
-app.get('/league/builds/user', getAllLeagueUserBuilds);
-app.get('/league/builds/public/user/:id', getAllPublicUserBuilds);
-app.post('/league/builds/new', createLeagueBuild);
-app.delete('/league/builds/delete/:buildId', deleteLeagueBuild);
-app.put('/league/build/privacy', setBuildPrivacy);
+app.get('/league/builds/all', LeagueBuildController.getAllLeagueBuilds);
+app.get('/league/builds', LeagueBuildController.getLeagueBuilds);
+app.get('/league/builds/user', LeagueBuildController.getAllLeagueUserBuilds);
+app.get('/league/builds/public/user/:id', LeagueBuildController.getAllLeaguePublicUserBuilds);
+app.post('/league/builds/new', LeagueBuildController.createLeagueBuild);
+app.delete('/league/builds/delete/:buildId', LeagueBuildController.deleteLeagueBuild);
+app.put('/league/build/privacy', LeagueBuildController.setLeagueBuildPrivacy);
+
+// dota builds
+app.get('/dota/builds/all', DotaBuildController.getAllDotaBuilds);
+app.get('/dota/builds', DotaBuildController.getDotaBuilds);
+app.get('/dota/builds/user', DotaBuildController.getAllDotaUserBuilds);
+app.get('/dota/builds/public/user/:id', DotaBuildController.getAllDotaPublicUserBuilds);
+app.post('/dota/builds/new', DotaBuildController.createDotaBuild);
+app.delete('/dota/builds/delete/:buildId', DotaBuildController.deleteDotaBuild);
+app.put('/dota/build/privacy', DotaBuildController.setDotaBuildPrivacy);
 
 app.options('*', cors(options));
 
